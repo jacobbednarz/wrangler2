@@ -1,5 +1,96 @@
 # wrangler
 
+## 0.0.17
+
+### Patch Changes
+
+- [#414](https://github.com/cloudflare/wrangler2/pull/414) [`f30426f`](https://github.com/cloudflare/wrangler2/commit/f30426fad5cd0be7f8a2e197a6ea279c0798bf15) Thanks [@petebacondarwin](https://github.com/petebacondarwin)! - fix: support `build.upload.dir` when using `build.upload.main`
+
+  Although, `build.upload.dir` is deprecated, we should still support using it when the entry-point is being defined by the `build.upload.main` and the format is `modules`.
+
+  Fixes #413
+
+* [#398](https://github.com/cloudflare/wrangler2/pull/398) [`40d9553`](https://github.com/cloudflare/wrangler2/commit/40d955341d6c14fde51ff622a9c7371e5c6049c1) Thanks [@threepointone](https://github.com/threepointone)! - feat: guess-worker-format
+
+  This formalises the logic we use to "guess"/infer what a worker's format is - either "modules" or "service worker". Previously we were using the output of the esbuild process metafile to infer this, we now explicitly do so in a separate step (esbuild's so fast that it doesn't have any apparent performance hit, but we also do a simpler form of the build to get this information).
+
+  This also adds `--format` as a command line arg for `publish`.
+
+- [#422](https://github.com/cloudflare/wrangler2/pull/422) [`ef13735`](https://github.com/cloudflare/wrangler2/commit/ef137352697e440a0007c5a099503ad2f4526eaf) Thanks [@threepointone](https://github.com/threepointone)! - chore: rename `open-in-brower.ts` to `open-in-browser.ts`
+
+* [#411](https://github.com/cloudflare/wrangler2/pull/411) [`a52f0e0`](https://github.com/cloudflare/wrangler2/commit/a52f0e00f85fa7602f30b9540b060b60968adf23) Thanks [@ObsidianMinor](https://github.com/ObsidianMinor)! - feat: unsafe-bindings
+
+  Adds support for "unsafe bindings", that is, bindings that aren't supported by wrangler, but are
+  desired when uploading a Worker to Cloudflare. This allows you to use beta features before
+  official support is added to wrangler, while also letting you migrate to proper support for the
+  feature when desired. Note: these bindings may not work everywhere, and may break at any time.
+
+- [#415](https://github.com/cloudflare/wrangler2/pull/415) [`d826f5a`](https://github.com/cloudflare/wrangler2/commit/d826f5aae2d05023728d8ee5e30ffb79c0d674a5) Thanks [@threepointone](https://github.com/threepointone)! - fix: don't crash when browser windows don't open
+
+  We open browser windows for a few things; during `wrangler dev`, and logging in. There are environments where this doesn't work as expected (like codespaces, stackblitz, etc). This fix simply logs an error instead of breaking the flow. This is the same fix as https://github.com/cloudflare/wrangler2/pull/263, now applied to the rest of wrangler.
+
+* [#408](https://github.com/cloudflare/wrangler2/pull/408) [`14098af`](https://github.com/cloudflare/wrangler2/commit/14098af0886b0cbdda90823527ca6037770375b3) Thanks [@mrbbot](https://github.com/mrbbot)! - Upgrade `miniflare` to [`2.3.0`](https://github.com/cloudflare/miniflare/releases/tag/v2.3.0)
+
+- [#403](https://github.com/cloudflare/wrangler2/pull/403) [`f9fef8f`](https://github.com/cloudflare/wrangler2/commit/f9fef8fbfe74d6a591ca1640639a18798c5469e6) Thanks [@JacobMGEvans](https://github.com/JacobMGEvans)! - feat: add scripts to package.json & autogenerate name value when initializing a project
+  To get wrangler init projects up and running with good ergonomics for deploying and development,
+  added default scripts "start" & "deploy" with assumed TS or JS files in generated ./src/index.
+  The name property is now derived from user input on `init <name>` or parent directory if no input is provided.
+
+* [#402](https://github.com/cloudflare/wrangler2/pull/402) [`5a9bb1d`](https://github.com/cloudflare/wrangler2/commit/5a9bb1dd6510511607c268e1709e0caa95d68f92) Thanks [@JacobMGEvans](https://github.com/JacobMGEvans)! - feat: Added Wrangler TOML fields
+  Additional field to get projects ready to publish as soon as possible.
+  It will check if the Worker is named, if not then it defaults to using the parent directory name.
+
+- [#227](https://github.com/cloudflare/wrangler2/pull/227) [`97e15f5`](https://github.com/cloudflare/wrangler2/commit/97e15f5372d298378e5bafd62798cddd6eeda27c) Thanks [@JacobMGEvans](https://github.com/JacobMGEvans)! - feature: Sentry Integration
+  Top level exception logging which will allow to Pre-empt issues, fix bugs faster,
+  Identify uncommon error scenarios, and better quality error information. Context includes of Error in addition to stacktrace
+  Environment:
+  OS/arch
+  node/npm versions
+  wrangler version
+  RewriteFrames relative pathing of stacktrace and will prevent user file system information
+  from being sent.
+
+  Sourcemaps:
+
+  - The sourcemap custom scripts for path matching in Artifact, Sentry Event and Build output is moved to be handled in GH Actions
+    Sentry upload moved after changeset version bump script and npm script to get current version into GH env variable
+  - Add org and project to secrets for increased obfuscation of Cloudflare internal ecosystem
+
+  Prompt for Opt-In:
+
+  - When Error is thrown user will be prompted with yes (only sends this time), Always, and No (default). Always and No
+    will be added to default.toml with a datetime property for future update checks.
+  - If the property already exists it will skip the prompt.
+
+  Sentry Tests:
+  The tests currently check that the decision flow works as currently set up then checks if Sentry is able
+  to send events or is disabled.
+
+* [#409](https://github.com/cloudflare/wrangler2/pull/409) [`f8bb523`](https://github.com/cloudflare/wrangler2/commit/f8bb523ed1a41f20391381e5d130b2685558002e) Thanks [@threepointone](https://github.com/threepointone)! - feat: support `[wasm_modules]` for service-worker format workers
+
+  This lands support for `[wasm_modules]` as defined by https://github.com/cloudflare/wrangler/pull/1677.
+
+  wasm modules can be defined in service-worker format with configuration in wrangler.toml as -
+
+  ```
+  [wasm_modules]
+  MYWASM = "./path/to/my-wasm.wasm"
+  ```
+
+  The module will then be available as the global `MYWASM` inside your code. Note that this ONLY makes sense in service-worker format workers (for now).
+
+  (In the future, we MAY enable wasm module imports in service-worker format (i.e. `import MYWASM from './path/to/my-wasm.wasm'`) and global imports inside modules format workers.)
+
+- [#423](https://github.com/cloudflare/wrangler2/pull/423) [`dd9058d`](https://github.com/cloudflare/wrangler2/commit/dd9058d134eead969841136279e57df8203e84d9) Thanks [@petebacondarwin](https://github.com/petebacondarwin)! - feat: add support for managing R2 buckets
+
+  This change introduces three new commands, which manage buckets under the current account:
+
+  - `r2 buckets list`: list information about all the buckets.
+  - `r2 buckets create`: create a new bucket - will error if the bucket already exists.
+  - `r2 buckets delete`: delete a bucket.
+
+  This brings Wrangler 2 inline with the same features in Wrangler 1.
+
 ## 0.0.16
 
 ### Patch Changes

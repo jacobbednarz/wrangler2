@@ -61,14 +61,6 @@ function Dev(props: DevProps): JSX.Element {
   // kinda forbid that, so we thread the entry through useCustomBuild
   const entry = useCustomBuild(props.entry, props.buildCommand);
 
-  const bundle = useEsbuild({
-    entry,
-    destination: directory,
-    staticRoot: props.public,
-    jsxFactory: props.jsxFactory,
-    jsxFragment: props.jsxFragment,
-  });
-
   const format = useWorkerFormat({ file: entry, format: props.format });
   if (format && props.public && format === "service-worker") {
     throw new Error(
@@ -81,6 +73,15 @@ function Dev(props: DevProps): JSX.Element {
       "You cannot configure [wasm_modules] with an ES Module worker. Instead, import the .wasm module directly in your code"
     );
   }
+
+  const bundle = useEsbuild({
+    entry,
+    format,
+    destination: directory,
+    staticRoot: props.public,
+    jsxFactory: props.jsxFactory,
+    jsxFragment: props.jsxFragment,
+  });
 
   const toggles = useHotkeys(
     {
@@ -313,6 +314,13 @@ function useLocalWorker(props: {
               ];
             }
           ),
+          ...bundle.modules.reduce<string[]>((cmd, { name }) => {
+            if (name.endsWith(".wasm")) {
+              const identifier = name.replace(/[^a-zA-Z0-9_$]/g, "_");
+              return cmd.concat([`--wasm`, `${identifier}=${name}`]);
+            }
+            return cmd;
+          }, []),
           "--modules",
           String(format === "modules"),
           "--modules-rule",
@@ -504,17 +512,19 @@ type EsbuildBundle = {
 function useEsbuild(props: {
   entry: undefined | string;
   destination: string | undefined;
+  format: CfScriptFormat | undefined;
   staticRoot: undefined | string;
   jsxFactory: string | undefined;
   jsxFragment: string | undefined;
 }): EsbuildBundle | undefined {
-  const { entry, destination, staticRoot, jsxFactory, jsxFragment } = props;
+  const { entry, destination, staticRoot, jsxFactory, jsxFragment, format } =
+    props;
   const [bundle, setBundle] = useState<EsbuildBundle>();
   useEffect(() => {
     let result: esbuild.BuildResult | undefined;
     async function build() {
-      if (!destination || !entry) return;
-      const moduleCollector = makeModuleCollector();
+      if (!destination || !entry || !format) return;
+      const moduleCollector = makeModuleCollector({ format });
       result = await esbuild.build({
         entryPoints: [entry],
         bundle: true,
@@ -583,7 +593,7 @@ function useEsbuild(props: {
     return () => {
       result?.stop?.();
     };
-  }, [entry, destination, staticRoot, jsxFactory, jsxFragment]);
+  }, [entry, destination, staticRoot, jsxFactory, jsxFragment, format]);
   return bundle;
 }
 

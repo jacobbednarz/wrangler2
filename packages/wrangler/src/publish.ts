@@ -137,7 +137,7 @@ export default async function publish(props: Props): Promise<void> {
       );
     }
 
-    const moduleCollector = makeModuleCollector();
+    const moduleCollector = makeModuleCollector({ format });
     const result = await esbuild.build({
       ...(props.experimentalPublic
         ? {

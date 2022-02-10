@@ -1213,6 +1213,40 @@ export default{
       expect(std.err).toMatchInlineSnapshot(`""`);
       expect(std.warn).toMatchInlineSnapshot(`""`);
     });
+
+    it("should be able to import .wasm modules from service-worker format workers", async () => {
+      writeWranglerToml();
+      fs.writeFileSync("./index.js", "import TESTWASMNAME from './test.wasm';");
+      fs.writeFileSync("./test.wasm", "SOME WASM CONTENT");
+      mockUploadWorkerRequest({
+        expectedType: "sw",
+        expectedModules: {
+          __94b240d0d692281e6467aa42043986e5c7eea034_test_wasm:
+            "SOME WASM CONTENT",
+        },
+        expectedBindings: [
+          {
+            name: "__94b240d0d692281e6467aa42043986e5c7eea034_test_wasm",
+            part: "__94b240d0d692281e6467aa42043986e5c7eea034_test_wasm",
+            type: "wasm_module",
+          },
+        ],
+      });
+      mockSubDomainRequest();
+      await runWrangler("publish index.js");
+      expect(std.out).toMatchInlineSnapshot(`
+        "Uploaded
+        test-name
+        (TIMINGS)
+        Deployed
+        test-name
+        (TIMINGS)
+         
+        test-name.test-sub-domain.workers.dev"
+      `);
+      expect(std.err).toMatchInlineSnapshot(`""`);
+      expect(std.warn).toMatchInlineSnapshot(`""`);
+    });
   });
 });
 
